@@ -1,0 +1,101 @@
+@forward "vuetify/settings";
+
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap");
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope", system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    sans-serif;
+  background: transparent;
+  color: #202536;
+}
+
+/* Fondo de la app (claro por defecto) */
+.v-application {
+  background: radial-gradient(
+    1200px 800px at 80% -10%,
+    color-mix(in srgb, rgb(var(--v-theme-primary)) 16%, white 84%) 0%,
+    #f3f6fb 40%,
+    #ffffff 100%
+  ) !important;
+}
+
+/* Fondo de la app en modo oscuro */
+.v-application.v-theme--crtDark {
+  background: radial-gradient(
+    1200px 800px at 80% -10%,
+    #0f172a 0%,
+    #0b1220 40%,
+    #0b1120 100%
+  ) !important;
+  color: #dbeafe;
+}
+
+/* Evitar parches blancos en oscuro (contenedores principales y campos) */
+.v-application.v-theme--crtDark .v-main,
+.v-application.v-theme--crtDark .v-container {
+  background: transparent !important;
+}
+.v-application.v-theme--crtDark .v-field,
+.v-application.v-theme--crtDark .v-field__overlay {
+  background: rgb(var(--v-theme-surface-variant)) !important;
+}
+
+/* En modo claro, dar leve tinte a inputs para evitar blanco puro */
+.v-application:not(.v-theme--crtDark) .v-field,
+.v-application:not(.v-theme--crtDark) .v-field__overlay {
+  background: color-mix(
+    in srgb,
+    rgb(var(--v-theme-primary)) 6%,
+    white 94%
+  ) !important;
+}
+
+/* Sutiles mejoras */
+.v-card {
+  border: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+/* Scrollbar fina */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+
+/* Login layout helper */
+.auth-container {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Títulos con contraste adecuado */
+h1,
+.text-h1,
+h2,
+.text-h2,
+h3,
+.text-h3 {
+  color: rgba(var(--v-theme-on-surface), 0.94);
+  font-weight: 700;
+}
+.v-theme--crtDark h1,
+.v-theme--crtDark .text-h1,
+.v-theme--crtDark h2,
+.v-theme--crtDark .text-h2,
+.v-theme--crtDark h3,
+.v-theme--crtDark .text-h3 {
+  color: rgba(var(--v-theme-on-surface), 0.96);
+}
