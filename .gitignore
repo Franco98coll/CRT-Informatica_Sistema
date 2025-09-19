@@ -1,0 +1,49 @@
+# Node
+auth/
+node_modules/
+**/node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env
+.env
+.env.*
+client/.env*
+server/.env*
+
+# Build outputs
+/dist/
+client/dist/
+server/dist/
+/.vite/
+client/.vite/
+
+# Coverage
+coverage/
+
+# Editor/OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Cache
+.cache/
+.eslintcache
+.parcel-cache
+vite.config.ts.timestamp*
+
+# Uploads/temp
+uploads/
+/tmp/
+server/uploads/
+client/public/uploads/
+
+# Local databases
+*.sqlite
+*.sqlite-journal
