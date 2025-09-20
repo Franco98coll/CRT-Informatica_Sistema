@@ -57,13 +57,28 @@
         </div>
         <v-row>
           <v-col cols="12" md="7">
-            <div class="text-caption text-medium-emphasis">Diagnóstico</div>
-            <div class="text-body-2 mt-1">
-              {{
-                data.diagnosticoAClienteOrden ||
-                "Todavía no hay diagnóstico cargado."
-              }}
-            </div>
+            <v-row class="align-start" dense>
+              <v-col cols="12" sm="5" md="4">
+                <div v-if="data.fotoUrl || data.fotoEquipo">
+                  <v-img
+                    :src="data.fotoUrl || data.fotoEquipo || ''"
+                    max-width="220"
+                    aspect-ratio="1"
+                    cover
+                    class="rounded"
+                  />
+                </div>
+              </v-col>
+              <v-col cols="12" sm="7" md="8">
+                <div class="text-caption text-medium-emphasis">Diagnóstico</div>
+                <div class="text-body-2 mt-1">
+                  {{
+                    data.diagnosticoAClienteOrden ||
+                    "Todavía no hay diagnóstico cargado."
+                  }}
+                </div>
+              </v-col>
+            </v-row>
           </v-col>
           <v-col cols="12" md="5">
             <v-sheet class="pa-3" rounded="lg" color="surface-variant">
@@ -80,30 +95,6 @@
             </v-sheet>
           </v-col>
         </v-row>
-
-        <v-divider class="my-4" />
-
-        <div v-if="data.fotoUrl || data.fotoEquipo" class="d-flex ga-3 align-start">
-          <v-img
-            :src="data.fotoUrl || data.fotoEquipo || ''"
-            max-width="220"
-            aspect-ratio="1"
-            cover
-            class="rounded"
-          />
-          <div>
-            <div class="text-caption text-medium-emphasis mb-2">Foto del equipo</div>
-            <v-btn
-              color="primary"
-              variant="text"
-              size="small"
-              prepend-icon="mdi-open-in-new"
-              @click="openFoto"
-            >
-              Abrir imagen en nueva pestaña
-            </v-btn>
-          </div>
-        </div>
       </v-card-text>
     </v-card>
   </v-container>

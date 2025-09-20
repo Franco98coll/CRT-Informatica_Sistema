@@ -20,6 +20,7 @@ export async function listOrdenes(): Promise<Orden[]> {
        idEquipo,
        idEstadoOrden
      FROM dbo.Orden
+    WHERE anulado = 0
      ORDER BY idOrden DESC`
   );
   return recordset as Orden[];
@@ -68,7 +69,9 @@ export async function listOrdenesFull(filters?: {
     req.input("fechaHasta", filters.fechaHasta);
     where.push(`CONVERT(date, o.fechaHoraCreadoOrden) <= @fechaHasta`);
   }
-  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  // Filtrar registros anulados
+  where.push("o.anulado = 0", "e.anulado = 0", "c.anulado = 0");
+  const whereSql = `WHERE ${where.join(" AND ")}`;
   const { recordset } = await req.query(
     `SELECT TOP (300)
        o.idOrden,
@@ -84,9 +87,9 @@ export async function listOrdenesFull(filters?: {
        o.fallaEquipoOrden,
        o.diagnosticoTecnicoOrden,
        o.diagnosticoAClienteOrden
-     FROM dbo.Orden o
-     JOIN dbo.Equipo e ON e.idEquipo = o.idEquipo
-     JOIN dbo.Cliente c ON c.idCliente = e.idCliente
+    FROM dbo.Orden o
+    JOIN dbo.Equipo e ON e.idEquipo = o.idEquipo
+    JOIN dbo.Cliente c ON c.idCliente = e.idCliente
      JOIN dbo.OrdenEstado oe ON oe.idOrdenEstado = o.idOrdenEstado
      LEFT JOIN dbo.Presupuesto p ON p.idOrden = o.idOrden
      LEFT JOIN dbo.PresupuestoEstado pe ON pe.idPresupuestoEstado = p.idPresupuestoEstado
@@ -116,13 +119,13 @@ export async function getOrdenFullById(
      o.fallaEquipoOrden,
      o.diagnosticoTecnicoOrden,
      o.diagnosticoAClienteOrden
-     FROM dbo.Orden o
-     JOIN dbo.Equipo e ON e.idEquipo = o.idEquipo
-     JOIN dbo.Cliente c ON c.idCliente = e.idCliente
+    FROM dbo.Orden o
+    JOIN dbo.Equipo e ON e.idEquipo = o.idEquipo
+    JOIN dbo.Cliente c ON c.idCliente = e.idCliente
      JOIN dbo.OrdenEstado oe ON oe.idOrdenEstado = o.idOrdenEstado
      LEFT JOIN dbo.Presupuesto p ON p.idOrden = o.idOrden
      LEFT JOIN dbo.PresupuestoEstado pe ON pe.idPresupuestoEstado = p.idPresupuestoEstado
-     WHERE o.idOrden = @idOrden`
+    WHERE o.idOrden = @idOrden AND o.anulado = 0 AND e.anulado = 0 AND c.anulado = 0`
   );
   return (recordset[0] as OrdenFull) || null;
 }

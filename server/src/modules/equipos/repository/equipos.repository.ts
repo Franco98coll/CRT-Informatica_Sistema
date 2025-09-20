@@ -27,7 +27,8 @@ export async function listEquipos(): Promise<Equipo[]> {
     `SELECT TOP (200)
        idEquipo, marcaEquipo, modeloEquipo, numeroDeSerieEquipo, fotoEquipo, idCliente
      FROM dbo.Equipo
-     ORDER BY idEquipo DESC`
+    WHERE anulado = 0
+    ORDER BY idEquipo DESC`
   );
   return recordset as Equipo[];
 }
@@ -41,7 +42,7 @@ export async function getEquipoBySerial(
     `SELECT TOP (1)
        idEquipo, marcaEquipo, modeloEquipo, numeroDeSerieEquipo, fotoEquipo, idCliente
      FROM dbo.Equipo
-     WHERE numeroDeSerieEquipo = @serial`
+    WHERE anulado = 0 AND numeroDeSerieEquipo = @serial`
   );
   return (recordset[0] as Equipo) || null;
 }

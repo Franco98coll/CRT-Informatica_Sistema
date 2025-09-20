@@ -23,6 +23,7 @@ export async function listClientes(): Promise<Cliente[]> {
        TelefonoCliente,
        DocumentoCliente
      FROM dbo.Cliente
+     WHERE anulado = 0
      ORDER BY idCliente DESC`
   );
   return recordset as Cliente[];
@@ -40,9 +41,9 @@ export async function searchClientes(term: string): Promise<Cliente[]> {
     `SELECT TOP (50)
        idCliente, NombreCliente, TelefonoCliente, DocumentoCliente
      FROM dbo.Cliente
-     WHERE NombreCliente LIKE @term
+    WHERE anulado = 0 AND (NombreCliente LIKE @term
         OR TelefonoCliente LIKE @term2
-        OR DocumentoCliente LIKE @term3
+      OR DocumentoCliente LIKE @term3)
      ORDER BY idCliente DESC`
   );
   return recordset as Cliente[];
@@ -68,4 +69,37 @@ export async function createCliente(
      VALUES (@NombreCliente, @TelefonoCliente, @DocumentoCliente);`
   );
   return recordset[0]?.id as number;
+}
+
+export async function updateCliente(
+  idCliente: number,
+  input: CreateClienteInput
+): Promise<void> {
+  const pool = await getPool();
+  const req = pool
+    .request()
+    .input("idCliente", sql.Int, idCliente)
+    .input("NombreCliente", sql.NVarChar(150), input.NombreCliente)
+    .input("TelefonoCliente", sql.NVarChar(30), input.TelefonoCliente ?? null)
+    .input(
+      "DocumentoCliente",
+      sql.NVarChar(30),
+      input.DocumentoCliente ?? null
+    );
+
+  await req.query(
+    `UPDATE dbo.Cliente
+     SET NombreCliente = @NombreCliente,
+         TelefonoCliente = @TelefonoCliente,
+         DocumentoCliente = @DocumentoCliente
+     WHERE idCliente = @idCliente`
+  );
+}
+
+export async function deleteCliente(idCliente: number): Promise<void> {
+  const pool = await getPool();
+  const req = pool.request().input("idCliente", sql.Int, idCliente);
+  await req.query(
+    `UPDATE dbo.Cliente SET anulado = 1 WHERE idCliente = @idCliente`
+  );
 }

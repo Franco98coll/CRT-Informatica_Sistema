@@ -57,6 +57,12 @@
           <v-btn
             variant="text"
             :color="isDark ? 'on-surface' : 'on-primary'"
+            to="/clientes"
+            >Clientes</v-btn
+          >
+          <v-btn
+            variant="text"
+            :color="isDark ? 'on-surface' : 'on-primary'"
             to="/estadisticas"
             >Estadísticas</v-btn
           >

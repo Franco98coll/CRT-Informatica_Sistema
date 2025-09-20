@@ -4,7 +4,7 @@
       <v-col cols="12" md="6">
         <h2 class="text-h5 font-weight-bold">Estadísticas</h2>
         <div class="text-body-2 opacity-70">
-          Resumen de marcas, clientes y tiempos de finalización.
+          Resumen de marcas, clientes, presupuestos e ingresos.
         </div>
       </v-col>
       <v-col cols="12" md="3" class="d-flex align-end justify-end">
@@ -16,6 +16,27 @@
           density="comfortable"
           style="max-width: 140px"
         />
+      </v-col>
+    </v-row>
+
+    <v-row class="mt-2">
+      <v-col cols="12">
+        <v-card>
+          <v-card-title class="d-flex align-center">
+            <v-icon class="mr-2" color="primary">mdi-timer-sand</v-icon>
+            <span class="text-subtitle-1 font-weight-medium"
+              >Tiempo promedio de finalización</span
+            >
+          </v-card-title>
+          <v-card-text>
+            <div class="text-h5 font-weight-bold">
+              {{ avgSecondsLabel }}
+            </div>
+            <div class="text-caption opacity-70">
+              Basado en órdenes finalizadas
+            </div>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
 
@@ -50,21 +71,49 @@
     </v-row>
 
     <v-row class="mt-2">
-      <v-col cols="12">
+      <v-col cols="12" md="6">
         <v-card>
-          <v-card-title class="d-flex align-center">
-            <v-icon class="mr-2" color="primary">mdi-timer-sand</v-icon>
+          <v-card-title class="d-flex align-center justify-space-between">
             <span class="text-subtitle-1 font-weight-medium"
-              >Tiempo promedio de finalización</span
+              >% Presupuestos</span
+            >
+            <v-chip size="small" color="info" variant="tonal"
+              >{{ presupuestos.total }} total</v-chip
             >
           </v-card-title>
           <v-card-text>
-            <div class="text-h5 font-weight-bold">
-              {{ avgSecondsLabel }}
+            <div class="d-flex align-center ga-4">
+              <div class="text-center">
+                <div
+                  class="text-h5 font-weight-bold"
+                  :style="{ color: getCssColor('success') }"
+                >
+                  {{ presupuestos.approvedPct }}%
+                </div>
+                <div class="text-caption opacity-70">Aprobados</div>
+              </div>
+              <div class="text-center">
+                <div
+                  class="text-h5 font-weight-bold"
+                  :style="{ color: getCssColor('error') }"
+                >
+                  {{ presupuestos.rejectedPct }}%
+                </div>
+                <div class="text-caption opacity-70">Rechazados</div>
+              </div>
             </div>
-            <div class="text-caption opacity-70">
-              Basado en órdenes finalizadas
-            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" md="6">
+        <v-card>
+          <v-card-title class="d-flex align-center justify-space-between">
+            <span class="text-subtitle-1 font-weight-medium"
+              >Ingresos por mes</span
+            >
+          </v-card-title>
+          <v-card-text>
+            <Bar :data="chartIngresos.data" :options="chartOptionsMoney" />
           </v-card-text>
         </v-card>
       </v-col>
@@ -129,6 +178,20 @@ const chartClientes = ref({
   },
 });
 
+// Ingresos por mes (basado en presupuestos aprobados)
+const chartIngresos = ref({
+  data: {
+    labels: [] as string[],
+    datasets: [
+      {
+        label: "Ingresos",
+        data: [] as number[],
+        backgroundColor: getCssColor("primary"),
+      },
+    ],
+  },
+});
+
 const marcasTotal = computed(() =>
   chartMarcas.value.data.datasets[0].data.reduce((a, b) => a + b, 0)
 );
@@ -153,6 +216,38 @@ const chartOptions = computed(() => ({
     },
     y: {
       ticks: { color: isDark.value ? "#CBD5E1" : "#374151" },
+      grid: {
+        color: isDark.value ? "rgba(148,163,184,0.2)" : "rgba(0,0,0,0.05)",
+      },
+    },
+  },
+}));
+
+// Opciones para gráfico de dinero con formato de moneda
+const chartOptionsMoney = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: isDark.value ? "#E5E7EB" : "#111827" } },
+    title: { display: false },
+    tooltip: {
+      callbacks: {
+        label: (ctx: any) => formatCurrency(Number(ctx.raw || 0)),
+      },
+    },
+  },
+  scales: {
+    x: {
+      ticks: { color: isDark.value ? "#CBD5E1" : "#374151" },
+      grid: {
+        color: isDark.value ? "rgba(148,163,184,0.2)" : "rgba(0,0,0,0.05)",
+      },
+    },
+    y: {
+      ticks: {
+        color: isDark.value ? "#CBD5E1" : "#374151",
+        callback: (v: any) => formatCurrency(Number(v)),
+      },
       grid: {
         color: isDark.value ? "rgba(148,163,184,0.2)" : "rgba(0,0,0,0.05)",
       },
@@ -222,6 +317,49 @@ async function refreshAvg() {
   avgSeconds.value = data.seconds ?? 0;
 }
 
+// % de presupuestos aprobados vs rechazados
+const presupuestos = ref({
+  total: 0,
+  approved: 0,
+  rejected: 0,
+  other: 0,
+  approvedPct: 0,
+  rejectedPct: 0,
+});
+
+async function refreshPresupuestoPercent() {
+  const { data } = await axios.get(`/api/stats/presupuesto-percent`);
+  presupuestos.value = data;
+}
+
+// Ingresos por mes
+async function refreshIngresos() {
+  const { data } = await axios.get<Array<{ month: string; total: number }>>(
+    `/api/stats/ingresos-mensuales?months=12`
+  );
+  chartIngresos.value = {
+    data: {
+      labels: data.map((d) => d.month),
+      datasets: [
+        {
+          label: "Ingresos",
+          data: data.map((d) => d.total),
+          backgroundColor: getCssColor("primary"),
+        },
+      ],
+    },
+  };
+}
+
+onMounted(async () => {
+  await Promise.all([
+    refreshCharts(),
+    refreshAvg(),
+    refreshPresupuestoPercent(),
+    refreshIngresos(),
+  ]);
+});
+
 function palette(i: number) {
   // Usa colores del tema para integrarse con Vuetify
   const colors = [
@@ -247,13 +385,17 @@ function getCssColor(name: string) {
   return v ? `rgb(${v.trim()})` : "#8884d8";
 }
 
-onMounted(async () => {
-  await Promise.all([refreshCharts(), refreshAvg()]);
-});
-
-watch(limit, async () => {
-  await refreshCharts();
-});
+function formatCurrency(n: number) {
+  try {
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+      maximumFractionDigits: 0,
+    }).format(n || 0);
+  } catch {
+    return `$ ${Math.round(n || 0).toLocaleString("es-AR")}`;
+  }
+}
 </script>
 
 <style scoped>

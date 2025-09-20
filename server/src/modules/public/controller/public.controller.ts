@@ -33,7 +33,7 @@ export async function getPublicOrden(req: Request, res: Response) {
          FROM dbo.Orden o
          JOIN dbo.Equipo e ON e.idEquipo = o.idEquipo
          JOIN dbo.Cliente c ON c.idCliente = e.idCliente
-         WHERE o.idOrden = @idOrden`
+         WHERE o.idOrden = @idOrden AND o.anulado = 0 AND e.anulado = 0 AND c.anulado = 0`
       );
     const docDB = norm(recordset?.[0]?.documento ?? "");
     if (!docDB || docDB !== docIngresado) {

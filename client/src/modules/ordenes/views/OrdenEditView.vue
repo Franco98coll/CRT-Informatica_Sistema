@@ -1,69 +1,75 @@
 <template>
   <v-container class="py-6" max-width="800">
-    <h2>Editar Orden #{{ id }}</h2>
-    <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
-    <div v-if="orden">
-      <p>
-        <strong>Cliente:</strong> {{ orden.NombreCliente }} |
-        <strong>Serie:</strong> {{ orden.numeroDeSerieEquipo }}
-      </p>
-      <v-row>
-        <v-col cols="12" md="6">
-          <v-select
-            v-model="estadoOrden"
-            :items="estadosOrden"
-            item-title="nombreEstadoOrden"
-            item-value="idEstadoOrden"
-            label="Estado de la orden"
-          />
-        </v-col>
-        <v-col cols="12" md="6">
-          <v-text-field
-            v-model.number="monto"
-            type="number"
-            label="Monto presupuesto"
-          />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12" md="6">
-          <v-select
-            v-model="estadoPresupuesto"
-            :items="estadosPresupuesto"
-            item-title="nombreEstadoPresupuesto"
-            item-value="idEstadoPresupuesto"
-            label="Estado del presupuesto"
-          />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12">
-          <v-textarea
-            v-model="falla"
-            label="Falla del equipo"
-            rows="2"
-            auto-grow
-          />
-        </v-col>
-        <v-col cols="12">
-          <v-textarea
-            v-model="diagTecnico"
-            label="Diagnóstico técnico"
-            rows="2"
-            auto-grow
-          />
-        </v-col>
-        <v-col cols="12">
-          <v-textarea
-            v-model="diagCliente"
-            label="Diagnóstico informado al cliente"
-            rows="2"
-            auto-grow
-          />
-        </v-col>
-      </v-row>
-      <v-btn color="primary" @click="guardar">Guardar cambios</v-btn>
-    </div>
+    <v-card>
+      <v-card-text>
+        <h2>Editar Orden #{{ id }}</h2>
+        <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
+        <div v-if="orden">
+          <p class="mt-4">
+            <strong>Cliente:</strong> {{ orden.NombreCliente }} |
+            <strong>Serie:</strong> {{ orden.numeroDeSerieEquipo }}
+          </p>
+          <v-row>
+            <v-col class="mt-4" cols="12" md="6">
+              <v-select
+                v-model="estadoOrden"
+                :items="estadosOrden"
+                item-title="nombreEstadoOrden"
+                item-value="idEstadoOrden"
+                label="Estado de la orden"
+              />
+            </v-col>
+            <v-col class="mt-4" cols="12" md="6">
+              <v-text-field
+                v-model.number="monto"
+                type="number"
+                label="Monto presupuesto"
+              />
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="estadoPresupuesto"
+                :items="estadosPresupuesto"
+                item-title="nombreEstadoPresupuesto"
+                item-value="idEstadoPresupuesto"
+                label="Estado del presupuesto"
+              />
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col cols="12">
+              <v-textarea
+                v-model="falla"
+                label="Falla del equipo"
+                rows="2"
+                auto-grow
+              />
+            </v-col>
+            <v-col cols="12">
+              <v-textarea
+                v-model="diagTecnico"
+                label="Diagnóstico técnico"
+                rows="2"
+                auto-grow
+              />
+            </v-col>
+            <v-col cols="12">
+              <v-textarea
+                v-model="diagCliente"
+                label="Diagnóstico informado al cliente"
+                rows="2"
+                auto-grow
+              />
+            </v-col>
+          </v-row>
+          <v-col cols="12" class="d-flex justify-end">
+            <v-btn color="primary" @click="guardar">Guardar cambios</v-btn>
+          </v-col>
+        </div>
+      </v-card-text>
+    </v-card>
   </v-container>
 </template>
 

@@ -16,7 +16,9 @@ export async function listPresupuestos(): Promise<Presupuesto[]> {
        CONVERT(varchar(19), fechaHoraCreadoPresupuesto, 126) AS fechaHoraCreadoPresupuesto,
        CONVERT(varchar(32), montoPresupuesto) AS montoPresupuesto,
        idPresupuestoEstado AS idEstadoPresupuesto
-     FROM dbo.Presupuesto
+    FROM dbo.Presupuesto p
+    JOIN dbo.Orden o ON o.idOrden = p.idOrden
+    WHERE o.anulado = 0
      ORDER BY idOrden DESC`
   );
   return recordset as Presupuesto[];

@@ -41,8 +41,6 @@ vite.config.ts.timestamp*
 # Uploads/temp
 uploads/
 /tmp/
-server/uploads/
-client/public/uploads/
 
 # Local databases
 *.sqlite
