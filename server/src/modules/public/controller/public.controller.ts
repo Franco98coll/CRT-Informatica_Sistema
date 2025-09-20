@@ -51,7 +51,22 @@ export async function getPublicOrden(req: Request, res: Response) {
       nombreEstadoPresupuesto,
       idEstadoPresupuesto,
       montoPresupuesto,
-    } = data;
+      fotoEquipo,
+    } = data as any;
+
+    // Construir URL accesible si la ruta apunta a /uploads
+    let fotoUrl: string | null = null;
+    if (typeof fotoEquipo === "string" && fotoEquipo) {
+      const p = fotoEquipo.replace(/\\/g, "/");
+      if (p.startsWith("/uploads") || p.includes("/uploads/")) {
+        const base = `${req.protocol}://${req.get("host")}`;
+        fotoUrl = p.startsWith("/") ? `${base}${p}` : `${base}/${p}`;
+      } else {
+        // Si es una URL absoluta ya
+        if (/^https?:\/\//i.test(p)) fotoUrl = p;
+      }
+    }
+
     res.json({
       idOrden: id,
       fechaHoraCreadoOrden,
@@ -61,6 +76,8 @@ export async function getPublicOrden(req: Request, res: Response) {
       nombreEstadoPresupuesto,
       idEstadoPresupuesto,
       montoPresupuesto,
+      fotoEquipo: fotoEquipo ?? null,
+      fotoUrl,
     });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || "Error" });

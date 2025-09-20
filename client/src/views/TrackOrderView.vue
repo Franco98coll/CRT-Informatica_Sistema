@@ -80,6 +80,30 @@
             </v-sheet>
           </v-col>
         </v-row>
+
+        <v-divider class="my-4" />
+
+        <div v-if="data.fotoUrl || data.fotoEquipo" class="d-flex ga-3 align-start">
+          <v-img
+            :src="data.fotoUrl || data.fotoEquipo || ''"
+            max-width="220"
+            aspect-ratio="1"
+            cover
+            class="rounded"
+          />
+          <div>
+            <div class="text-caption text-medium-emphasis mb-2">Foto del equipo</div>
+            <v-btn
+              color="primary"
+              variant="text"
+              size="small"
+              prepend-icon="mdi-open-in-new"
+              @click="openFoto"
+            >
+              Abrir imagen en nueva pestaña
+            </v-btn>
+          </div>
+        </div>
       </v-card-text>
     </v-card>
   </v-container>
@@ -97,6 +121,8 @@ type PublicOrden = {
   nombreEstadoPresupuesto?: string | null;
   idEstadoPresupuesto?: number | null;
   montoPresupuesto?: string | null;
+  fotoEquipo?: string | null;
+  fotoUrl?: string | null;
 };
 
 const idOrdenInput = ref<string>("");
@@ -157,6 +183,11 @@ function presuColor(nombre?: string | null): string | undefined {
   if (n.includes("rech") || n.includes("nega")) return "budget-rejected";
   if (n.includes("rev") || n.includes("sol")) return "budget-review";
   return "secondary";
+}
+
+function openFoto() {
+  const url = data.value?.fotoUrl || data.value?.fotoEquipo;
+  if (url) window.open(url, "_blank");
 }
 </script>
 
