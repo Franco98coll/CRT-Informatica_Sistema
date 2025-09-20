@@ -37,14 +37,28 @@ export async function upsertPresupuesto(
     .input("idPresupuestoEstado", idEstadoPresupuesto);
 
   await req.query(`
-    MERGE dbo.Presupuesto AS tgt
-    USING (SELECT @idOrden AS idOrden) AS src
-    ON tgt.idOrden = src.idOrden
-    WHEN MATCHED THEN
-      UPDATE SET montoPresupuesto = @monto, idPresupuestoEstado = @idPresupuestoEstado
-    WHEN NOT MATCHED THEN
-      INSERT (idOrden, fechaHoraCreadoPresupuesto, montoPresupuesto, idPresupuestoEstado)
-      VALUES (@idOrden, SYSUTCDATETIME(), @monto, @idPresupuestoEstado);
+    IF COL_LENGTH('dbo.Presupuesto', 'idEstadoPresupuesto') IS NOT NULL
+    BEGIN
+      MERGE dbo.Presupuesto AS tgt
+      USING (SELECT @idOrden AS idOrden) AS src
+      ON tgt.idOrden = src.idOrden
+      WHEN MATCHED THEN
+        UPDATE SET montoPresupuesto = @monto, idPresupuestoEstado = @idPresupuestoEstado, idEstadoPresupuesto = @idPresupuestoEstado
+      WHEN NOT MATCHED THEN
+        INSERT (idOrden, fechaHoraCreadoPresupuesto, montoPresupuesto, idPresupuestoEstado, idEstadoPresupuesto)
+        VALUES (@idOrden, SYSUTCDATETIME(), @monto, @idPresupuestoEstado, @idPresupuestoEstado);
+    END
+    ELSE
+    BEGIN
+      MERGE dbo.Presupuesto AS tgt
+      USING (SELECT @idOrden AS idOrden) AS src
+      ON tgt.idOrden = src.idOrden
+      WHEN MATCHED THEN
+        UPDATE SET montoPresupuesto = @monto, idPresupuestoEstado = @idPresupuestoEstado
+      WHEN NOT MATCHED THEN
+        INSERT (idOrden, fechaHoraCreadoPresupuesto, montoPresupuesto, idPresupuestoEstado)
+        VALUES (@idOrden, SYSUTCDATETIME(), @monto, @idPresupuestoEstado);
+    END
   `);
 }
 
@@ -58,13 +72,27 @@ export async function setPresupuestoEstado(
     .input("idOrden", idOrden)
     .input("idPresupuestoEstado", idEstadoPresupuesto);
   await req.query(`
-    MERGE dbo.Presupuesto AS tgt
-    USING (SELECT @idOrden AS idOrden) AS src
-    ON tgt.idOrden = src.idOrden
-    WHEN MATCHED THEN
-      UPDATE SET idPresupuestoEstado = @idPresupuestoEstado
-    WHEN NOT MATCHED THEN
-      INSERT (idOrden, fechaHoraCreadoPresupuesto, montoPresupuesto, idPresupuestoEstado)
-      VALUES (@idOrden, SYSUTCDATETIME(), 0, @idPresupuestoEstado);
+    IF COL_LENGTH('dbo.Presupuesto', 'idEstadoPresupuesto') IS NOT NULL
+    BEGIN
+      MERGE dbo.Presupuesto AS tgt
+      USING (SELECT @idOrden AS idOrden) AS src
+      ON tgt.idOrden = src.idOrden
+      WHEN MATCHED THEN
+        UPDATE SET idPresupuestoEstado = @idPresupuestoEstado, idEstadoPresupuesto = @idPresupuestoEstado
+      WHEN NOT MATCHED THEN
+        INSERT (idOrden, fechaHoraCreadoPresupuesto, montoPresupuesto, idPresupuestoEstado, idEstadoPresupuesto)
+        VALUES (@idOrden, SYSUTCDATETIME(), 0, @idPresupuestoEstado, @idPresupuestoEstado);
+    END
+    ELSE
+    BEGIN
+      MERGE dbo.Presupuesto AS tgt
+      USING (SELECT @idOrden AS idOrden) AS src
+      ON tgt.idOrden = src.idOrden
+      WHEN MATCHED THEN
+        UPDATE SET idPresupuestoEstado = @idPresupuestoEstado
+      WHEN NOT MATCHED THEN
+        INSERT (idOrden, fechaHoraCreadoPresupuesto, montoPresupuesto, idPresupuestoEstado)
+        VALUES (@idOrden, SYSUTCDATETIME(), 0, @idPresupuestoEstado);
+    END
   `);
 }

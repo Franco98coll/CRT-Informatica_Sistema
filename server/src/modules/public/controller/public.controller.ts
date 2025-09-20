@@ -45,6 +45,7 @@ export async function getPublicOrden(req: Request, res: Response) {
     const {
       idOrden: id,
       fechaHoraCreadoOrden,
+      fechaHoraEntregadoEquipoOrden,
       nombreEstadoOrden,
       idEstadoOrden,
       diagnosticoAClienteOrden,
@@ -67,9 +68,53 @@ export async function getPublicOrden(req: Request, res: Response) {
       }
     }
 
+    // Traer datos de garantía si existen
+    let garantia: {
+      tiempoOrdenGarantia: string | null;
+      trabajoOrdenGarantia: string | null;
+      venceEl: string | null;
+    } | null = null;
+    try {
+      const pool2 = await getPool();
+      const { recordset: gset } = await pool2
+        .request()
+        .input("idOrden", idOrden)
+        .query(
+          `SELECT tiempoOrdenGarantia, trabajoOrdenGarantia FROM dbo.OrdenGarantia WHERE idOrden = @idOrden`
+        );
+      if (gset?.[0]) {
+        const tiempo = gset[0].tiempoOrdenGarantia as string | null;
+        const trabajo = gset[0].trabajoOrdenGarantia as string | null;
+        let vence: string | null = null;
+        if (tiempo && fechaHoraEntregadoEquipoOrden) {
+          // Intento simple: si el tiempo contiene número + palabra (día/mes/año), calcular fin
+          const m = String(tiempo)
+            .toLowerCase()
+            .match(/(\d+)\s*(dia|d[ií]as|mes|meses|a[nñ]o|a[nñ]os)/);
+          if (m) {
+            const n = parseInt(m[1], 10);
+            const unit = m[2];
+            const d0 = new Date(fechaHoraEntregadoEquipoOrden);
+            const d = new Date(d0);
+            if (/dia|d[ií]as/.test(unit)) d.setDate(d.getDate() + n);
+            else if (/mes|meses/.test(unit)) d.setMonth(d.getMonth() + n);
+            else if (/a[nñ]o|a[nñ]os/.test(unit))
+              d.setFullYear(d.getFullYear() + n);
+            vence = d.toISOString();
+          }
+        }
+        garantia = {
+          tiempoOrdenGarantia: tiempo ?? null,
+          trabajoOrdenGarantia: trabajo ?? null,
+          venceEl: vence,
+        };
+      }
+    } catch {}
+
     res.json({
       idOrden: id,
       fechaHoraCreadoOrden,
+      fechaHoraEntregadoEquipoOrden,
       nombreEstadoOrden,
       idEstadoOrden,
       diagnosticoAClienteOrden,
@@ -78,6 +123,7 @@ export async function getPublicOrden(req: Request, res: Response) {
       montoPresupuesto,
       fotoEquipo: fotoEquipo ?? null,
       fotoUrl,
+      garantia,
     });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || "Error" });

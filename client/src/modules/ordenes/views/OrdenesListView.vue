@@ -1,15 +1,17 @@
 <template>
   <v-container class="py-6">
     <h2>Órdenes</h2>
-    <v-row class="mb-4" align="end">
-      <v-col cols="12" md="4">
+    <v-row class="mb-4" align="center">
+      <v-col cols="12" md="4" class="d-flex align-center py-0 mt-5">
         <v-text-field
           v-model="qCliente"
           label="Buscar cliente/telefono/doc"
           clearable
+          density="compact"
+          class="input-36 flex-grow-1"
         />
       </v-col>
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="3" class="d-flex align-center py-0 mt-5">
         <v-select
           v-model="idEstadoOrden"
           :items="estados"
@@ -17,16 +19,32 @@
           item-value="idEstadoOrden"
           label="Estado de orden"
           clearable
+          density="compact"
+          class="input-36 flex-grow-1"
         />
       </v-col>
-      <v-col cols="6" md="2">
-        <v-text-field v-model="fechaDesde" label="Desde" type="date" />
+      <v-col cols="6" md="2" class="d-flex align-center py-0 mt-5">
+        <v-text-field
+          v-model="fechaDesde"
+          label="Desde"
+          type="date"
+          density="compact"
+          class="input-36 flex-grow-1"
+        />
       </v-col>
-      <v-col cols="6" md="2">
-        <v-text-field v-model="fechaHasta" label="Hasta" type="date" />
+      <v-col cols="6" md="2" class="d-flex align-center py-0 mt-5">
+        <v-text-field
+          v-model="fechaHasta"
+          label="Hasta"
+          type="date"
+          density="compact"
+          class="input-36 flex-grow-1"
+        />
       </v-col>
-      <v-col cols="12" md="1">
-        <v-btn color="primary" @click="buscar">Filtrar</v-btn>
+      <v-col cols="12" md="1" class="d-flex align-center justify-center py-0">
+        <v-btn color="primary" class="btn-36" @click="buscar"
+          ><v-icon>mdi-magnify</v-icon></v-btn
+        >
       </v-col>
     </v-row>
     <v-data-table
@@ -41,9 +59,11 @@
         <div class="d-inline-flex align-center ga-1">
           <v-chip
             size="small"
-            :color="colorForOrden(item.nombreEstadoOrden)"
+            :color="colorForOrdenId(item.idEstadoOrden, item.nombreEstadoOrden)"
             variant="tonal"
-            >{{ item.nombreEstadoOrden }}</v-chip
+            >{{
+              labelForOrdenId(item.idEstadoOrden, item.nombreEstadoOrden)
+            }}</v-chip
           >
           <div class="d-inline-flex ga-1">
             <v-tooltip
@@ -52,7 +72,7 @@
               :text="
                 item.idEstadoOrden === est.idEstadoOrden
                   ? 'Actual'
-                  : est.nombreEstadoOrden
+                  : labelForOrdenId(est.idEstadoOrden, est.nombreEstadoOrden)
               "
               location="top"
               color="surface-variant"
@@ -63,7 +83,9 @@
                   v-bind="props"
                   icon
                   size="x-small"
-                  :color="colorForOrden(est.nombreEstadoOrden)"
+                  :color="
+                    colorForOrdenId(est.idEstadoOrden, est.nombreEstadoOrden)
+                  "
                   :variant="
                     item.idEstadoOrden === est.idEstadoOrden ? 'flat' : 'text'
                   "
@@ -71,9 +93,13 @@
                     item.idEstadoOrden === est.idEstadoOrden ||
                     isTransitionDisabled(item, est)
                   "
-                  @click="setEstadoOrden(item, est.idEstadoOrden)"
+                  @click="setEstadoOrden(item, est)"
                 >
-                  <v-icon :icon="iconForOrden(est.nombreEstadoOrden)"></v-icon>
+                  <v-icon
+                    :icon="
+                      iconForOrdenId(est.idEstadoOrden, est.nombreEstadoOrden)
+                    "
+                  ></v-icon>
                 </v-btn>
               </template>
             </v-tooltip>
@@ -139,9 +165,40 @@
         <span v-else>—</span>
       </template>
       <template v-slot:[`item.actions`]="{ item }">
-        <v-btn size="small" :to="`/ordenes/${item.idOrden}`">Editar</v-btn>
+        <v-btn size="small" :to="`/ordenes/${item.idOrden}`"
+          ><v-icon>mdi-pencil</v-icon> Editar</v-btn
+        >
       </template>
     </v-data-table>
+
+    <!-- Dialog: datos de garantía al entregar -->
+    <v-dialog v-model="entregarDialog" max-width="520">
+      <v-card>
+        <v-card-title>Registrar garantía de la orden</v-card-title>
+        <v-card-text class="d-flex flex-column ga-3">
+          <v-text-field
+            v-model="entregarForm.tiempoOrdenGarantia"
+            label="Tiempo de garantía (ej: 90 días)"
+            placeholder="Ej: 90 días, 3 meses, 1 año"
+            density="compact"
+          />
+          <v-textarea
+            v-model="entregarForm.trabajoOrdenGarantia"
+            label="¿Qué cubre la garantía?"
+            placeholder="Describe la cobertura: trabajo realizado, repuestos, condiciones, etc."
+            rows="3"
+            density="compact"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="cancelarEntrega">Cancelar</v-btn>
+          <v-btn color="primary" @click="confirmarEntrega"
+            >Confirmar entrega</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -149,6 +206,8 @@
 import { ref, onMounted } from "vue";
 import { useOrdenes, type OrdenRow } from "../composables/useOrdenes";
 import { useCatalogos } from "./../composables/useCatalogos";
+import Swal from "sweetalert2";
+import { toastSuccess, alertError } from "../../../utils/notify";
 
 const { listFull } = useOrdenes();
 const { searchMarcas } = useCatalogos();
@@ -199,33 +258,132 @@ onMounted(async () => {
 });
 
 function isTransitionDisabled(row: any, est: any) {
-  const curName = (row.nombreEstadoOrden || "").toLowerCase();
-  const tgtName = (est?.nombreEstadoOrden || "").toLowerCase();
-  // Si ya está entregado, bloquear todo
-  if (curName.includes("entreg")) return true;
-  // Si está finalizado, solo permitir entregado
-  if (curName.includes("final") && !tgtName.includes("entreg")) return true;
+  const curId: number | null | undefined = row?.idEstadoOrden;
+  const tgtId: number | null | undefined =
+    typeof est === "number" ? est : est?.idEstadoOrden;
+  if (!curId || !tgtId) return false;
+  // Si ya está entregada (5), bloquear todo
+  if (curId === 5) return true;
+  // Si está finalizada (4), solo permitir entregada (5)
+  if (curId === 4 && tgtId !== 5) return true;
   return false;
 }
 
-async function setEstadoOrden(row: any, idEstado: number) {
-  if (row.idEstadoOrden === idEstado) return;
-  await fetch(`/api/ordenes/${row.idOrden}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idEstadoOrden: idEstado }),
-  });
-  await buscar();
+const entregarDialog = ref(false);
+const entregarForm = ref<{
+  tiempoOrdenGarantia: string;
+  trabajoOrdenGarantia: string;
+}>({ tiempoOrdenGarantia: "", trabajoOrdenGarantia: "" });
+const entregarTarget = ref<{
+  row: any;
+  idEstado: number;
+  nombre: string;
+} | null>(null);
+
+async function setEstadoOrden(row: any, estado: any) {
+  const idEstado = typeof estado === "number" ? estado : estado?.idEstadoOrden;
+  const nombre = (estado?.nombreEstadoOrden || "").toLowerCase();
+  if (!idEstado || row.idEstadoOrden === idEstado) return;
+  if (nombre.includes("entreg") || nombre.includes("entrag")) {
+    entregarTarget.value = {
+      row,
+      idEstado,
+      nombre: estado?.nombreEstadoOrden || "",
+    };
+    // Resetear formulario por si quedó algo de otra entrega
+    entregarForm.value = { tiempoOrdenGarantia: "", trabajoOrdenGarantia: "" };
+    const ok = await Swal.fire({
+      title: "Confirmar entrega",
+      text: "Vas a marcar la orden como Entregada. ¿Continuar?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Sí, continuar",
+      cancelButtonText: "Cancelar",
+    }).then((r) => r.isConfirmed);
+    if (!ok) return;
+    entregarDialog.value = true;
+    return;
+  }
+  try {
+    const resp = await fetch(`/api/ordenes/${row.idOrden}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idEstadoOrden: idEstado }),
+    });
+    if (!resp.ok) {
+      let msg = "No se pudo actualizar";
+      try {
+        const j = await resp.json();
+        msg = j?.error || j?.message || msg;
+      } catch {}
+      throw new Error(msg);
+    }
+    await buscar();
+    const n = (estado?.nombreEstadoOrden || "").toLowerCase();
+    if (n.includes("final")) toastSuccess("Orden finalizada");
+    else toastSuccess("Estado actualizado");
+  } catch (e: any) {
+    alertError(e?.message || "No se pudo actualizar");
+  }
+}
+
+async function confirmarEntrega() {
+  if (!entregarTarget.value) return;
+  const { row, idEstado } = entregarTarget.value;
+  const payload: any = {
+    idEstadoOrden: idEstado,
+    tiempoOrdenGarantia: entregarForm.value.tiempoOrdenGarantia || null,
+    trabajoOrdenGarantia: entregarForm.value.trabajoOrdenGarantia || null,
+  };
+  try {
+    const resp = await fetch(`/api/ordenes/${row.idOrden}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) {
+      let msg = "No se pudo registrar la entrega";
+      try {
+        const j = await resp.json();
+        msg = j?.error || j?.message || msg;
+      } catch {}
+      throw new Error(msg);
+    }
+    entregarDialog.value = false;
+    entregarTarget.value = null;
+    await buscar();
+    toastSuccess("Entregado", "Se registró la entrega y garantía.");
+  } catch (e: any) {
+    alertError(e?.message || "No se pudo registrar la entrega");
+  }
+}
+
+function cancelarEntrega() {
+  entregarDialog.value = false;
+  entregarTarget.value = null;
 }
 
 async function setEstadoPresupuesto(row: any, idEstado: number) {
   if (row.idEstadoPresupuesto === idEstado) return;
-  await fetch(`/api/ordenes/${row.idOrden}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idEstadoPresupuesto: idEstado }),
-  });
-  await buscar();
+  try {
+    const resp = await fetch(`/api/ordenes/${row.idOrden}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idEstadoPresupuesto: idEstado }),
+    });
+    if (!resp.ok) {
+      let msg = "No se pudo actualizar el presupuesto";
+      try {
+        const j = await resp.json();
+        msg = j?.error || j?.message || msg;
+      } catch {}
+      throw new Error(msg);
+    }
+    await buscar();
+    toastSuccess("Estado de presupuesto actualizado");
+  } catch (e: any) {
+    alertError(e?.message || "No se pudo actualizar el presupuesto");
+  }
 }
 
 function openFoto(row: any) {
@@ -238,9 +396,13 @@ function iconForOrden(nombre: string): string {
   const n = (nombre || "").toLowerCase();
   if (n.includes("crea")) return "mdi-plus-box-outline";
   if (n.includes("diag")) return "mdi-stethoscope";
+  if (n.includes("esper") || n.includes("repuest") || n.includes("respuest"))
+    return "mdi-clock-outline";
+  if (n.includes("proce")) return "mdi-tools";
   if (n.includes("repar") || n.includes("serv")) return "mdi-tools";
   if (n.includes("final")) return "mdi-check-circle-outline";
-  if (n.includes("entreg")) return "mdi-truck-check-outline";
+  if (n.includes("entreg") || n.includes("entrag"))
+    return "mdi-truck-check-outline";
   return "mdi-checkbox-blank-circle-outline";
 }
 
@@ -261,9 +423,12 @@ function colorForOrden(nombre?: string | null): string | undefined {
   if (!n) return undefined;
   if (n.includes("crea")) return "order-created";
   if (n.includes("diag")) return "order-diagnosis";
+  if (n.includes("esper") || n.includes("repuest") || n.includes("respuest"))
+    return "warning";
+  if (n.includes("proce")) return "order-repair";
   if (n.includes("repar") || n.includes("serv")) return "order-repair";
   if (n.includes("final")) return "order-finalized";
-  if (n.includes("entreg")) return "order-delivered";
+  if (n.includes("entreg") || n.includes("entrag")) return "order-delivered";
   return "secondary";
 }
 
@@ -275,6 +440,72 @@ function colorForPresupuesto(nombre?: string | null): string | undefined {
   if (n.includes("rech") || n.includes("nega")) return "budget-rejected";
   if (n.includes("rev") || n.includes("sol")) return "budget-review";
   return "secondary";
+}
+
+function normalizeEstadoNombre(nombre?: string | null): string {
+  const raw = String(nombre || "").trim();
+  const n = raw.toLowerCase();
+  if (n.includes("entrag") || n.includes("entreg")) return "Entregada";
+  if (n.includes("final")) return "Finalizada";
+  if (n.includes("proce")) return "En proceso";
+  if (n.includes("esper") || n.includes("repuest") || n.includes("respuest"))
+    return "Esperando repuesto";
+  if (n.includes("crea")) return "Creada";
+  return raw || "";
+}
+
+function colorForOrdenId(
+  id?: number | null,
+  nombre?: string | null
+): string | undefined {
+  switch (id) {
+    case 1:
+      return "order-created";
+    case 2:
+      return "order-repair";
+    case 3:
+      return "warning";
+    case 4:
+      return "order-finalized";
+    case 5:
+      return "order-delivered";
+    default:
+      return colorForOrden(normalizeEstadoNombre(nombre));
+  }
+}
+
+function iconForOrdenId(id?: number | null, nombre?: string | null): string {
+  switch (id) {
+    case 1:
+      return "mdi-plus-box-outline";
+    case 2:
+      return "mdi-tools";
+    case 3:
+      return "mdi-clock-outline";
+    case 4:
+      return "mdi-check-circle-outline";
+    case 5:
+      return "mdi-truck-check-outline";
+    default:
+      return iconForOrden(normalizeEstadoNombre(nombre || ""));
+  }
+}
+
+function labelForOrdenId(id?: number | null, nombre?: string | null): string {
+  switch (id) {
+    case 1:
+      return "Creada";
+    case 2:
+      return "En proceso";
+    case 3:
+      return "Esperando repuesto";
+    case 4:
+      return "Finalizada";
+    case 5:
+      return "Entregada";
+    default:
+      return normalizeEstadoNombre(nombre);
+  }
 }
 </script>
 
@@ -329,5 +560,28 @@ function colorForPresupuesto(nombre?: string | null): string | undefined {
 
 .clickable {
   cursor: pointer;
+}
+
+/* Igualar altura de inputs al botón (36px) */
+.input-36 :deep(.v-field),
+.input-36 :deep(.v-field__input) {
+  min-height: 36px;
+  height: 36px;
+}
+.input-36 :deep(.v-field__append-inner),
+.input-36 :deep(.v-field__prepend-inner) {
+  height: 36px;
+}
+
+/* Forzar altura/ancho del botón a 36px */
+.btn-36 {
+  --v-btn-height: 36px;
+  height: 36px !important;
+  min-height: 36px !important;
+  width: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

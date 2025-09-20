@@ -29,6 +29,7 @@ export async function listOrdenes(): Promise<Orden[]> {
 export type OrdenFull = {
   idOrden: number;
   fechaHoraCreadoOrden: string;
+  fechaHoraEntregadoEquipoOrden?: string | null;
   numeroDeSerieEquipo: string | null;
   fotoEquipo?: string | null;
   NombreCliente: string;
@@ -108,6 +109,7 @@ export async function getOrdenFullById(
     `SELECT 
        o.idOrden,
        CONVERT(varchar(19), o.fechaHoraCreadoOrden, 126) AS fechaHoraCreadoOrden,
+       CONVERT(varchar(19), o.fechaHoraEntregadoEquipoOrden, 126) AS fechaHoraEntregadoEquipoOrden,
        e.numeroDeSerieEquipo,
        e.fotoEquipo,
        c.NombreCliente,
@@ -138,10 +140,14 @@ export async function updateEstadoOrden(
   await pool
     .request()
     .input("idOrden", idOrden)
-    .input("idOrdenEstado", idEstadoOrden)
-    .query(
-      `UPDATE dbo.Orden SET idOrdenEstado = @idOrdenEstado WHERE idOrden = @idOrden`
-    );
+    .input("idOrdenEstado", idEstadoOrden).query(`
+      UPDATE dbo.Orden SET idOrdenEstado = @idOrdenEstado WHERE idOrden = @idOrden;
+      IF COL_LENGTH('dbo.Orden', 'idEstadoOrden') IS NOT NULL
+      BEGIN
+        EXEC sp_executesql N'UPDATE dbo.Orden SET idEstadoOrden = @idOrdenEstado WHERE idOrden = @idOrden',
+          N'@idOrden INT, @idOrdenEstado INT', @idOrden = @idOrden, @idOrdenEstado = @idOrdenEstado;
+      END
+    `);
 }
 
 export async function updateOrdenFields(params: {
@@ -175,4 +181,12 @@ export async function updateOrdenFields(params: {
     ", "
   )} WHERE idOrden = @idOrden`;
   await req.query(sql);
+  // Asegurar columna legada si existe (DB antiguas/triggers que lo requieran)
+  await pool.request().input("idOrden", idOrden).query(`
+      IF COL_LENGTH('dbo.Orden', 'idEstadoOrden') IS NOT NULL
+      BEGIN
+        EXEC sp_executesql N'UPDATE dbo.Orden SET idEstadoOrden = COALESCE(idEstadoOrden, idOrdenEstado) WHERE idOrden = @idOrden',
+          N'@idOrden INT', @idOrden = @idOrden;
+      END
+    `);
 }

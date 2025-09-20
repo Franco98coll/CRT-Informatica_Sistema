@@ -67,13 +67,13 @@ const vuetify = createVuetify({
     VCard: { rounded: "xl", elevation: 4 },
     VTextField: {
       variant: "outlined",
-      density: "comfortable",
+      density: "compact",
       color: "primary",
     },
-    VSelect: { variant: "outlined", density: "comfortable", color: "primary" },
+    VSelect: { variant: "outlined", density: "compact", color: "primary" },
     VAutocomplete: {
       variant: "outlined",
-      density: "comfortable",
+      density: "compact",
       color: "primary",
     },
     VDataTable: { density: "comfortable" },

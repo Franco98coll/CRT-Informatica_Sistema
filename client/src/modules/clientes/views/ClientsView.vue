@@ -9,13 +9,17 @@
         <v-text-field
           v-model="search"
           placeholder="Buscar por nombre, tel o documento"
-          density="comfortable"
+          density="compact"
           hide-details
           style="max-width: 360px"
           @keyup.enter="onSearch"
         />
-        <v-btn color="primary" @click="onSearch">Buscar</v-btn>
-        <v-btn color="primary" variant="tonal" @click="openCreate">Nuevo</v-btn>
+        <v-btn color="primary" @click="onSearch"
+          ><v-icon>mdi-magnify</v-icon></v-btn
+        >
+        <v-btn color="primary" variant="tonal" @click="openCreate"
+          ><v-icon>mdi-plus</v-icon></v-btn
+        >
       </v-col>
     </v-row>
 
@@ -60,36 +64,26 @@
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="dialog = false">Cancelar</v-btn>
-          <v-btn color="primary" @click="save" :loading="saving">Guardar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Confirm delete -->
-    <v-dialog v-model="confirm" max-width="420">
-      <v-card>
-        <v-card-title>Eliminar cliente</v-card-title>
-        <v-card-text>
-          ¿Seguro que querés eliminar a "{{ toDelete?.NombreCliente }}"?
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="confirm = false">Cancelar</v-btn>
-          <v-btn color="error" @click="doDelete" :loading="deleting"
-            >Eliminar</v-btn
+          <v-btn color="primary" @click="save" :loading="saving"
+            ><v-icon>mdi-content-save</v-icon></v-btn
           >
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-snackbar v-model="snack.show" :color="snack.color" timeout="2500">{{
-      snack.text
-    }}</v-snackbar>
+    <!-- Confirmaciones y toasts ahora con SweetAlert2 -->
   </v-container>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import Swal from "sweetalert2";
+import {
+  toastSuccess,
+  alertError,
+  confirmDanger,
+  toastInfo,
+} from "../../../utils/notify";
 import {
   listClientes,
   searchClientes,
@@ -126,29 +120,17 @@ const form = ref<{
   DocumentoCliente?: string | null;
 }>({ NombreCliente: "" });
 
-const confirm = ref(false);
 const toDelete = ref<Cliente | null>(null);
 const deleting = ref(false);
 
-const snack = ref({
-  show: false,
-  text: "",
-  color: "success" as "success" | "error" | "info",
-});
-
-function showSnack(
-  text: string,
-  color: "success" | "error" | "info" = "success"
-) {
-  snack.value = { show: true, text, color };
-}
+// usa utilidades centralizadas
 
 async function loadAll() {
   loading.value = true;
   try {
     items.value = await listClientes();
   } catch (e: any) {
-    showSnack(e?.message || "Error al cargar", "error");
+    alertError(e?.message || "Error al cargar");
   } finally {
     loading.value = false;
   }
@@ -160,7 +142,7 @@ async function onSearch() {
   try {
     items.value = await searchClientes(search.value.trim());
   } catch (e: any) {
-    showSnack(e?.message || "Error al buscar", "error");
+    alertError(e?.message || "Error al buscar");
   } finally {
     loading.value = false;
   }
@@ -187,7 +169,8 @@ function openEdit(c: Cliente) {
 
 async function save() {
   if (!form.value.NombreCliente?.trim()) {
-    return showSnack("Ingresá el nombre", "info");
+    toastSuccess("Ingresá el nombre");
+    return;
   }
   try {
     saving.value = true;
@@ -197,19 +180,19 @@ async function save() {
         TelefonoCliente: form.value.TelefonoCliente ?? null,
         DocumentoCliente: form.value.DocumentoCliente ?? null,
       });
-      showSnack("Cliente actualizado");
+      toastSuccess("Cliente actualizado");
     } else {
       await createCliente({
         NombreCliente: form.value.NombreCliente.trim(),
         TelefonoCliente: form.value.TelefonoCliente ?? null,
         DocumentoCliente: form.value.DocumentoCliente ?? null,
       });
-      showSnack("Cliente creado");
+      toastSuccess("Cliente creado");
     }
     dialog.value = false;
     await loadAll();
   } catch (e: any) {
-    showSnack(e?.message || "Error al guardar", "error");
+    alertError(e?.message || "Error al guardar");
   } finally {
     saving.value = false;
   }
@@ -217,19 +200,29 @@ async function save() {
 
 function askDelete(c: Cliente) {
   toDelete.value = c;
-  confirm.value = true;
+  // Se gestionará con Swal directamente en doDelete()
 }
 
 async function doDelete() {
   if (!toDelete.value) return;
+  const c = toDelete.value;
+  const ok = await Swal.fire({
+    title: "Eliminar cliente",
+    text: `¿Seguro que querés eliminar a "${c.NombreCliente}"?`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Sí, eliminar",
+    cancelButtonText: "Cancelar",
+    confirmButtonColor: "#e53935",
+  }).then((r) => r.isConfirmed);
+  if (!ok) return;
   deleting.value = true;
   try {
-    await deleteCliente(toDelete.value.idCliente);
-    showSnack("Cliente eliminado");
-    confirm.value = false;
+    await deleteCliente(c.idCliente);
+    toastSuccess("Cliente eliminado");
     await loadAll();
   } catch (e: any) {
-    showSnack(e?.message || "Error al eliminar", "error");
+    alertError(e?.message || "Error al eliminar");
   } finally {
     deleting.value = false;
   }

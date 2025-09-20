@@ -78,6 +78,7 @@ import { ref, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useOrdenes } from "../composables/useOrdenes";
 import axios from "axios";
+import { toastSuccess, alertError } from "../../../utils/notify";
 
 const route = useRoute();
 const id = Number(route.params.id);
@@ -120,6 +121,7 @@ onMounted(async () => {
     diagCliente.value = det.diagnosticoAClienteOrden || "";
   } catch (e: any) {
     error.value = e?.message || "Error cargando datos";
+    alertError(error.value);
   }
 });
 
@@ -134,8 +136,10 @@ async function guardar() {
       diagnosticoAClienteOrden: diagCliente.value || undefined,
     });
     error.value = null;
+    toastSuccess("Cambios guardados");
   } catch (e: any) {
     error.value = e?.message || "Error al guardar";
+    alertError(error.value);
   }
 }
 </script>

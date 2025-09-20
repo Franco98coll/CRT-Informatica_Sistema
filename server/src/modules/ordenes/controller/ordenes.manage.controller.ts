@@ -54,6 +54,8 @@ export async function update(req: Request, res: Response) {
       diagnosticoAClienteOrden,
       fechaHoraFinalizadoOrden,
       fechaHoraEntregadoEquipoOrden,
+      tiempoOrdenGarantia,
+      trabajoOrdenGarantia,
     } = req.body || {};
 
     if (idEstadoOrden) {
@@ -72,12 +74,15 @@ export async function update(req: Request, res: Response) {
       const cur = (current.nombreEstadoOrden || "").toLowerCase();
       const tgt = (targetName || "").toLowerCase();
 
-      if (cur.includes("entreg")) {
+      if (cur.includes("entreg") || cur.includes("entrag")) {
         return res
           .status(400)
           .json({ error: "Una orden entregada no puede modificarse." });
       }
-      if (cur.includes("final") && !tgt.includes("entreg")) {
+      if (
+        cur.includes("final") &&
+        !(tgt.includes("entreg") || tgt.includes("entrag"))
+      ) {
         return res.status(400).json({
           error: "Una orden finalizada solo puede cambiar a Entregado.",
         });
@@ -86,7 +91,7 @@ export async function update(req: Request, res: Response) {
       await updateEstadoOrden(idOrden, Number(idEstadoOrden));
 
       const setFinalizado = tgt.includes("final");
-      const setEntregado = tgt.includes("entreg");
+      const setEntregado = tgt.includes("entreg") || tgt.includes("entrag");
 
       // Actualizamos campos textuales
       await updateOrdenFields({
@@ -105,6 +110,25 @@ export async function update(req: Request, res: Response) {
           .map((c) => `${c} = SYSDATETIME()`)
           .join(", ")} WHERE idOrden = @id`;
         await pool.request().input("id", idOrden).query(sql);
+      }
+
+      // Si se entrega, registrar/actualizar garantía asociada
+      if (setEntregado) {
+        const reqG = pool
+          .request()
+          .input("idOrden", idOrden)
+          .input("tiempoOrdenGarantia", tiempoOrdenGarantia ?? null)
+          .input("trabajoOrdenGarantia", trabajoOrdenGarantia ?? null);
+        await reqG.query(`
+          MERGE dbo.OrdenGarantia AS tgt
+          USING (SELECT @idOrden AS idOrden) AS src
+          ON tgt.idOrden = src.idOrden
+          WHEN MATCHED THEN
+            UPDATE SET tiempoOrdenGarantia = @tiempoOrdenGarantia, trabajoOrdenGarantia = @trabajoOrdenGarantia
+          WHEN NOT MATCHED THEN
+            INSERT (idOrden, tiempoOrdenGarantia, trabajoOrdenGarantia)
+            VALUES (@idOrden, @tiempoOrdenGarantia, @trabajoOrdenGarantia);
+        `);
       }
     } else {
       await updateOrdenFields({

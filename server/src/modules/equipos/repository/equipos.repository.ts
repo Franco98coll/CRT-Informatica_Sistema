@@ -67,15 +67,24 @@ export async function createEquipo(input: CreateEquipoInput): Promise<number> {
   const newId = recordset[0]?.id as number;
 
   if (input.idsEquipoAccesorio && input.idsEquipoAccesorio.length) {
-    for (const accId of input.idsEquipoAccesorio) {
+    for (let i = 0; i < input.idsEquipoAccesorio.length; i++) {
+      const accId = input.idsEquipoAccesorio[i]!;
       const accReq = pool
         .request()
         .input("idEquipo", newId)
-        .input("idEquipoAccesorio", accId);
-      await accReq.query(
-        `INSERT INTO dbo.EquipoAccesorioItem (idEquipo, idEquipoAccesorio)
-         VALUES (@idEquipo, @idEquipoAccesorio)`
-      );
+        .input("idEquipoAccesorio", accId)
+        .input("isFirst", i === 0 ? 1 : 0);
+      await accReq.query(`
+        IF OBJECT_ID(N'dbo.EquipoAccesorioItem', N'U') IS NOT NULL
+        BEGIN
+          INSERT INTO dbo.EquipoAccesorioItem (idEquipo, idEquipoAccesorio)
+          VALUES (@idEquipo, @idEquipoAccesorio);
+        END
+        ELSE IF @isFirst = 1
+        BEGIN
+          UPDATE dbo.Equipo SET idEquipoAccesorio = @idEquipoAccesorio WHERE idEquipo = @idEquipo;
+        END
+      `);
     }
   }
 

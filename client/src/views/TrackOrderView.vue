@@ -88,9 +88,39 @@
               <div class="text-body-2">
                 {{ new Date(data.fechaHoraCreadoOrden).toLocaleString() }}
               </div>
+              <div v-if="data.fechaHoraEntregadoEquipoOrden" class="mt-2">
+                <div class="text-caption text-medium-emphasis">
+                  Fecha de entrega
+                </div>
+                <div class="text-body-2">
+                  {{
+                    new Date(
+                      data.fechaHoraEntregadoEquipoOrden
+                    ).toLocaleString()
+                  }}
+                </div>
+              </div>
               <div v-if="data.montoPresupuesto" class="mt-3">
                 <div class="text-caption text-medium-emphasis">Presupuesto</div>
                 <div class="text-body-2">$ {{ data.montoPresupuesto }}</div>
+              </div>
+              <div v-if="data.garantia" class="mt-3">
+                <div class="text-caption text-medium-emphasis">Garantía</div>
+                <div class="text-body-2">
+                  {{ data.garantia?.tiempoOrdenGarantia || "—" }}
+                </div>
+                <div
+                  v-if="data.garantia?.trabajoOrdenGarantia"
+                  class="text-body-2 mt-1"
+                >
+                  {{ data.garantia?.trabajoOrdenGarantia }}
+                </div>
+                <div
+                  v-if="data.garantia && data.garantia.venceEl"
+                  class="text-body-2 mt-1"
+                >
+                  Vence: {{ formatDate(data.garantia.venceEl) }}
+                </div>
               </div>
             </v-sheet>
           </v-col>
@@ -106,6 +136,7 @@ import { ref } from "vue";
 type PublicOrden = {
   idOrden: number;
   fechaHoraCreadoOrden: string;
+  fechaHoraEntregadoEquipoOrden?: string | null;
   nombreEstadoOrden: string;
   idEstadoOrden?: number;
   diagnosticoAClienteOrden?: string | null;
@@ -114,6 +145,11 @@ type PublicOrden = {
   montoPresupuesto?: string | null;
   fotoEquipo?: string | null;
   fotoUrl?: string | null;
+  garantia?: {
+    tiempoOrdenGarantia: string | null;
+    trabajoOrdenGarantia: string | null;
+    venceEl: string | null;
+  } | null;
 };
 
 const idOrdenInput = ref<string>("");
@@ -121,6 +157,12 @@ const documentoInput = ref<string>("");
 const loading = ref(false);
 const error = ref<string | null>(null);
 const data = ref<PublicOrden | null>(null);
+
+function formatDate(s?: string | null): string {
+  if (!s) return "";
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? String(s) : d.toLocaleDateString();
+}
 
 async function onSubmit() {
   error.value = null;

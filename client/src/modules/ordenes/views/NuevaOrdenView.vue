@@ -43,7 +43,9 @@
               />
             </v-col>
             <v-col cols="12" md="4">
-              <v-btn color="primary" @click="buscarClientes">Buscar</v-btn>
+              <v-btn color="primary" @click="buscarClientes"
+                ><v-icon>mdi-magnify</v-icon></v-btn
+              >
             </v-col>
           </v-row>
           <v-row v-if="clientes.length">
@@ -102,7 +104,9 @@
               />
             </v-col>
             <v-col cols="12" md="4">
-              <v-btn color="primary" @click="buscarEquipo">Buscar equipo</v-btn>
+              <v-btn color="primary" @click="buscarEquipo"
+                ><v-icon>mdi-magnify</v-icon></v-btn
+              >
             </v-col>
           </v-row>
           <div v-if="equipoEncontrado">
@@ -202,6 +206,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { toastSuccess, alertError } from "../../../utils/notify";
 import {
   useNuevaOrden,
   type Cliente,
@@ -250,6 +255,7 @@ async function crearCliente() {
     DocumentoCliente: nuevoCliente.value.DocumentoCliente ?? null,
   });
   clienteId.value = id;
+  toastSuccess("Cliente creado");
   step.value = 2;
 }
 
@@ -323,10 +329,12 @@ async function crearEquipo() {
         : [],
     });
     equipoId.value = id;
+    toastSuccess("Equipo creado");
     step.value = 3;
   } catch (e: any) {
     errorEquipo.value =
       e?.response?.data?.error || e?.message || "Error al crear equipo";
+    alertError(errorEquipo.value);
   }
 }
 
@@ -344,5 +352,6 @@ async function guardarOrden() {
     diagnosticoAClienteOrden: orden.value.diagnosticoAClienteOrden ?? null,
   });
   ordenCreada.value = id;
+  toastSuccess("Orden creada", `#${id}`);
 }
 </script>
