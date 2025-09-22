@@ -165,9 +165,47 @@
         <span v-else>—</span>
       </template>
       <template v-slot:[`item.actions`]="{ item }">
-        <v-btn size="small" :to="`/ordenes/${item.idOrden}`"
-          ><v-icon>mdi-pencil</v-icon> Editar</v-btn
-        >
+        <div class="d-inline-flex ga-2 align-center">
+          <v-tooltip
+            text="Imprimir ticket"
+            location="top"
+            color="surface-variant"
+            content-class="tooltip-contrast"
+          >
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                icon
+                size="small"
+                variant="text"
+                @click="printOrden(item)"
+              >
+                <v-icon>mdi-printer</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip
+            text="Imprimir etiqueta"
+            location="top"
+            color="surface-variant"
+            content-class="tooltip-contrast"
+          >
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                icon
+                size="small"
+                variant="text"
+                @click="printEtiqueta(item)"
+              >
+                <v-icon>mdi-sticker-text-outline</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-btn size="small" :to="`/ordenes/${item.idOrden}`"
+            ><v-icon>mdi-pencil</v-icon> Editar</v-btn
+          >
+        </div>
       </template>
     </v-data-table>
 
@@ -390,6 +428,168 @@ function openFoto(row: any) {
   const url = row?.fotoEquipo;
   if (!url) return;
   window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function printOrden(row: any) {
+  const id = row?.idOrden;
+  if (!id) return;
+  const url = `${window.location.origin}/ordenes/${id}/ticket?print=1`;
+  const iframe = document.createElement("iframe");
+  function printEtiqueta(row: any) {
+    const id = row?.idOrden;
+    if (!id) return;
+    const url = `${window.location.origin}/ordenes/${id}/etiqueta?print=1`;
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.src = url;
+
+    let printed = false;
+    const cleanup = () => {
+      setTimeout(() => {
+        try {
+          iframe.parentNode && iframe.parentNode.removeChild(iframe);
+        } catch {}
+      }, 1000);
+    };
+    const handleMsg = (ev: MessageEvent) => {
+      if (!ev?.data || ev.data?.type !== "label-ready") return;
+      if (printed) return;
+      printed = true;
+      try {
+        const w = iframe.contentWindow;
+        if (w) {
+          w.focus();
+          w.print();
+        }
+      } catch {}
+      window.removeEventListener("message", handleMsg);
+      cleanup();
+    };
+    window.addEventListener("message", handleMsg);
+    iframe.onload = () => {
+      setTimeout(() => {
+        if (printed) return;
+        try {
+          const w = iframe.contentWindow;
+          if (w) {
+            w.focus();
+            w.print();
+            printed = true;
+          }
+        } catch {}
+        window.removeEventListener("message", handleMsg);
+        cleanup();
+      }, 1000);
+    };
+    document.body.appendChild(iframe);
+  }
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.src = url;
+  let printed = false;
+  const cleanup = () => {
+    setTimeout(() => {
+      try {
+        iframe.parentNode && iframe.parentNode.removeChild(iframe);
+      } catch {}
+    }, 1000);
+  };
+  const handleMsg = (ev: MessageEvent) => {
+    if (!ev?.data || ev.data?.type !== "ticket-ready") return;
+    if (printed) return;
+    printed = true;
+    try {
+      const w = iframe.contentWindow;
+      if (w) {
+        w.focus();
+        w.print();
+      }
+    } catch {}
+    window.removeEventListener("message", handleMsg);
+    cleanup();
+  };
+  window.addEventListener("message", handleMsg);
+  // Fallback si no llega el mensaje
+  iframe.onload = () => {
+    setTimeout(() => {
+      if (printed) return;
+      try {
+        const w = iframe.contentWindow;
+        if (w) {
+          w.focus();
+          w.print();
+          printed = true;
+        }
+      } catch {}
+      window.removeEventListener("message", handleMsg);
+      cleanup();
+    }, 1000);
+  };
+  document.body.appendChild(iframe);
+}
+
+// Imprimir etiqueta con QR (iframe oculto)
+function printEtiqueta(row: any) {
+  const id = row?.idOrden;
+  if (!id) return;
+  const url = `${window.location.origin}/ordenes/${id}/etiqueta?print=1`;
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.src = url;
+
+  let printed = false;
+  const cleanup = () => {
+    setTimeout(() => {
+      try {
+        iframe.parentNode && iframe.parentNode.removeChild(iframe);
+      } catch {}
+    }, 1000);
+  };
+  const handleMsg = (ev: MessageEvent) => {
+    if (!ev?.data || ev.data?.type !== "label-ready") return;
+    if (printed) return;
+    printed = true;
+    try {
+      const w = iframe.contentWindow;
+      if (w) {
+        w.focus();
+        w.print();
+      }
+    } catch {}
+    window.removeEventListener("message", handleMsg);
+    cleanup();
+  };
+  window.addEventListener("message", handleMsg);
+  iframe.onload = () => {
+    setTimeout(() => {
+      if (printed) return;
+      try {
+        const w = iframe.contentWindow;
+        if (w) {
+          w.focus();
+          w.print();
+          printed = true;
+        }
+      } catch {}
+      window.removeEventListener("message", handleMsg);
+      cleanup();
+    }, 1000);
+  };
+  document.body.appendChild(iframe);
 }
 
 function iconForOrden(nombre: string): string {

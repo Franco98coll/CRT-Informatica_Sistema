@@ -33,6 +33,7 @@ export type OrdenFull = {
   numeroDeSerieEquipo: string | null;
   fotoEquipo?: string | null;
   NombreCliente: string;
+  TelefonoCliente?: string | null;
   nombreEstadoOrden: string;
   idEstadoOrden?: number;
   montoPresupuesto: string | null;
@@ -41,6 +42,9 @@ export type OrdenFull = {
   fallaEquipoOrden?: string | null;
   diagnosticoTecnicoOrden?: string | null;
   diagnosticoAClienteOrden?: string | null;
+  MarcaEquipo?: string | null;
+  ModeloEquipo?: string | null;
+  TipoEquipo?: string | null;
 };
 
 export async function listOrdenesFull(filters?: {
@@ -113,6 +117,7 @@ export async function getOrdenFullById(
        e.numeroDeSerieEquipo,
        e.fotoEquipo,
        c.NombreCliente,
+       c.TelefonoCliente,
        oe.nombreEstadoOrden,
        o.idOrdenEstado AS idEstadoOrden,
        CONVERT(varchar(32), p.montoPresupuesto) AS montoPresupuesto,
@@ -120,7 +125,10 @@ export async function getOrdenFullById(
      p.idPresupuestoEstado AS idEstadoPresupuesto,
      o.fallaEquipoOrden,
      o.diagnosticoTecnicoOrden,
-     o.diagnosticoAClienteOrden
+     o.diagnosticoAClienteOrden,
+     e.marcaEquipo AS MarcaEquipo,
+     e.modeloEquipo AS ModeloEquipo,
+     NULL AS TipoEquipo
     FROM dbo.Orden o
     JOIN dbo.Equipo e ON e.idEquipo = o.idEquipo
     JOIN dbo.Cliente c ON c.idCliente = e.idCliente

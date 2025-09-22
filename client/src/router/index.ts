@@ -31,6 +31,18 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/ordenes/:id/ticket",
+    name: "ordenes-ticket",
+    component: () => import("../modules/ordenes/views/OrdenTicketView.vue"),
+    meta: { requiresAuth: true, hideNavActions: true },
+  },
+  {
+    path: "/ordenes/:id/etiqueta",
+    name: "ordenes-etiqueta",
+    component: () => import("../modules/ordenes/views/OrdenEtiquetaView.vue"),
+    meta: { requiresAuth: true, hideNavActions: true },
+  },
+  {
     path: "/login",
     name: "login",
     component: () => import("@/modules/auth/views/LoginView.vue"),
