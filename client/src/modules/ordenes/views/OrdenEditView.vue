@@ -65,10 +65,6 @@
             </v-col>
           </v-row>
           <v-col cols="12" class="d-flex justify-end ga-2">
-            <v-btn variant="text" @click="imprimirTicket">
-              <v-icon start>mdi-printer</v-icon>
-              Imprimir ticket
-            </v-btn>
             <v-btn color="primary" @click="guardar">Guardar cambios</v-btn>
           </v-col>
         </div>
